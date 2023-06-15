@@ -17,7 +17,7 @@ class BookFactory extends Factory
     public function definition(): array
     {
         return [
-            'title' => fake()->sentence(3),
+            'title' => fake()->sentence(rand(3, 6)),
             'author' => fake()->name(),
             'created_at' => fake()->dateTimeBetween('- 2 years'),
             'updated_at' => fn(array $attr) => fake()->dateTimeBetween($attr['created_at'])
