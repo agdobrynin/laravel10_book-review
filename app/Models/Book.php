@@ -43,6 +43,5 @@ class Book extends Model
         $builder
             ->when($from, fn() => $builder->where('created_at', '>=', $from))
             ->when($to, fn() => $builder->where('created_at', '<=', $to));
-
     }
 }
