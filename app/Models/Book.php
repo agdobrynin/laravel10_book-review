@@ -12,6 +12,8 @@ class Book extends Model
     use HasFactory;
     use HasUuids;
 
+    protected $fillable = ['title', 'author'];
+
     public function reviews(): HasMany
     {
         return $this->hasMany(Review::class);
