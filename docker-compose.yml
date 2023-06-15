@@ -56,6 +56,15 @@ services:
             - '${FORWARD_MAILPIT_DASHBOARD_PORT:-8025}:8025'
         networks:
             - sail
+    adminer:
+        image: adminer
+        environment:
+            ADMINER_DEFAULT_SERVER: 'mariadb'
+            ADMINER_DEFAULT_DB_NAME: '${DB_DATABASE}'
+        ports:
+            - 8080:8080
+        networks:
+            - sail
 networks:
     sail:
         driver: bridge
