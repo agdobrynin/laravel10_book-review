@@ -21,27 +21,27 @@ class Book extends Model
         return $this->hasMany(Review::class);
     }
 
-    public function scopeTitle(Builder $builder, string $title): void
+    public function scopeTitle(Builder $builder, string $title): Builder
     {
-        $builder->where('title', 'like', "%{$title}%");
+        return $builder->where('title', 'like', "%{$title}%");
     }
 
-    public function scopePopular(Builder $builder, ?DateTimeInterface $from = null, ?DateTimeInterface $to = null): void
+    public function scopePopular(Builder $builder, ?DateTimeInterface $from = null, ?DateTimeInterface $to = null): Builder
     {
-        $builder->withCount(['reviews' => fn(Builder $q) => $this->dateFilter($q, $from, $to)])
+        return $builder->withCount(['reviews' => fn(Builder $q) => $this->dateFilter($q, $from, $to)])
             ->orderBy('reviews_count', 'desc');
     }
 
-    public function scopeHiRated(Builder $builder, ?DateTimeInterface $from = null, ?DateTimeInterface $to = null): void
+    public function scopeHiRated(Builder $builder, ?DateTimeInterface $from = null, ?DateTimeInterface $to = null): Builder
     {
-        $builder->withAvg(['reviews' => fn(Builder $q) => $this->dateFilter($q, $from, $to)], 'rating')
+        return $builder->withAvg(['reviews' => fn(Builder $q) => $this->dateFilter($q, $from, $to)], 'rating')
             ->orderBy('reviews_avg_rating', 'desc');
     }
 
-    private function dateFilter(Builder $builder, ?DateTimeInterface $from = null, ?DateTimeInterface $to = null): void
+    private function dateFilter(Builder $builder, ?DateTimeInterface $from = null, ?DateTimeInterface $to = null)
     {
-        $builder
-            ->when($from, fn() => $builder->where('created_at', '>=', $from))
-            ->when($to, fn() => $builder->where('created_at', '<=', $to));
+        return $builder
+            ->when($from, fn(Builder $q) => $q->where('created_at', '>=', $from->format('Y-m-d')))
+            ->when($to, fn(Builder $q) => $q->where('created_at', '<=', $to->format('Y-m-d')));
     }
 }
