@@ -65,3 +65,7 @@
 .link {
     @apply text-indigo-600 underline underline-offset-4 hover:underline-offset-2 hover:text-indigo-400
 }
+
+label {
+    @apply cursor-pointer
+}
