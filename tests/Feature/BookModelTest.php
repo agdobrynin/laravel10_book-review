@@ -7,7 +7,9 @@ use App\Models\Review;
 use DateTime;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\Sequence;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\DateWithRating;
 use Tests\TestCase;
 
@@ -117,14 +119,14 @@ class BookModelTest extends TestCase
     {
         [$book1, $book2] = $this->makeBooksWithReviewCreatedAtWithRating(
             [
-                new DateWithRating(rating:  1),
-                new DateWithRating(rating:  5),
-                new DateWithRating(rating:  1),
+                new DateWithRating(rating: 1),
+                new DateWithRating(rating: 5),
+                new DateWithRating(rating: 1),
             ],
             [
-                new DateWithRating(rating:  5),
-                new DateWithRating(rating:  1),
-                new DateWithRating(rating:  3),
+                new DateWithRating(rating: 5),
+                new DateWithRating(rating: 1),
+                new DateWithRating(rating: 3),
             ],
         );
 
@@ -151,7 +153,7 @@ class BookModelTest extends TestCase
             [
                 new DateWithRating(1, '2023-02-01'),
                 new DateWithRating(5, '2023-02-01'),
-                new DateWithRating(  1, '2023-02-02'),
+                new DateWithRating(1, '2023-02-02'),
             ],
             [
                 new DateWithRating(3, '2023-01-15'),
@@ -172,6 +174,104 @@ class BookModelTest extends TestCase
         $this->assertCount(2, $collection);
         $this->assertEquals($avgBook2, round($collection->offsetGet(0)->reviews_avg_rating, 2));
         $this->assertEquals(0, round($collection->offsetGet(1)->reviews_avg_rating, 2));
+    }
+
+    public function testScopeWithReviewsAvgRating(): void
+    {
+        $this->makeBooksWithReviewCreatedAtWithRating(
+            [
+                new DateWithRating(1, '2023-02-01'),
+                new DateWithRating(5, '2023-02-01'),
+                new DateWithRating(1, '2023-02-02'),
+            ],
+            [
+                new DateWithRating(3, '2023-01-15'),
+                new DateWithRating(2, '2023-01-20'),
+                new DateWithRating(5, '2023-02-20'),
+                new DateWithRating(4, '2023-02-21'),
+            ],
+        );
+        /** @var Collection $collection */
+        $collection = Book::withReviewsAvgRating()->get();
+        $this->assertCount(2, $collection);
+        $this->assertEquals(round((1 + 5 + 1) / 3, 2), round($collection->offsetGet(0)->reviews_avg_rating, 2));
+        $this->assertEquals(round((3 + 2 + 5 + 4) / 4, 2), round($collection->offsetGet(1)->reviews_avg_rating, 2));
+    }
+
+    public function testScopeWithReviewsAvgRatingWithDateFilter(): void
+    {
+        $this->makeBooksWithReviewCreatedAtWithRating(
+            [
+                new DateWithRating(1, '2023-02-01'),
+                new DateWithRating(5, '2023-02-01'),
+                new DateWithRating(1, '2023-02-02'),
+            ],
+            [
+                new DateWithRating(3, '2023-01-15'),
+                new DateWithRating(2, '2023-01-20'),
+                new DateWithRating(5, '2023-02-20'),
+                new DateWithRating(4, '2023-02-21'),
+            ],
+        );
+        /** @var Collection $collection */
+        $collection = Book::withReviewsAvgRating(
+            DateTime::createFromFormat('Y-m-d', '2023-02-01'),
+            DateTime::createFromFormat('Y-m-d', '2023-02-02')
+        )->get();
+        $this->assertCount(2, $collection);
+        $this->assertEquals(round((1 + 5 + 1) / 3, 2), round($collection->offsetGet(0)->reviews_avg_rating, 2));
+        $this->assertEquals(0, round($collection->offsetGet(1)->reviews_avg_rating, 2));
+    }
+
+    public function testScopeWithReviewsCount(): void
+    {
+        Book::factory()->has(Review::factory(22))->create();
+        Book::factory()->has(Review::factory(16))->create();
+        /** @var Collection $collection */
+        $collection = Book::withReviewsCount()->get();
+        $this->assertCount(2, $collection);
+        $this->assertEquals(22, $collection->offsetGet(0)->reviews_count);
+        $this->assertEquals(16, $collection->offsetGet(1)->reviews_count);
+    }
+
+    public function testScopeWithReviewsCountWithDateFilter(): void
+    {
+        $this->makeBooksWithReviewCreatedAt(
+            ['2023-01-01', '2023-01-02', '2023-01-02', '2023-01-31',],
+            ['2023-01-02', '2023-01-04', '2023-02-22', '2023-02-26',],
+        );
+        /** @var Collection $collection */
+        $collection = Book::withReviewsCount(
+            DateTime::createFromFormat('Y-m-d', '2023-01-01'),
+            DateTime::createFromFormat('Y-m-d', '2023-01-04'),
+        )->get();
+        $this->assertCount(2, $collection);
+        $this->assertEquals(3, $collection->offsetGet(0)->reviews_count);
+        $this->assertEquals(2, $collection->offsetGet(1)->reviews_count);
+    }
+
+    public function testScopeWithReviewsWithAvgRatingWithReviewCountNotFound(): void
+    {
+        $this->expectException(ModelNotFoundException::class);
+        Book::withReviewsWithAvgRatingWithReviewCount(Str::uuid());
+    }
+
+    public function testScopeWithReviewsWithAvgRatingWithReviewCount(): void
+    {
+        [$book] = $this->makeBooksWithReviewCreatedAtWithRating(
+            [
+                new DateWithRating(1, '2023-02-01'),
+                new DateWithRating(5, '2023-02-01'),
+                new DateWithRating(1, '2023-02-02'),
+            ],
+        );
+
+        $bookFound = Book::withReviewsWithAvgRatingWithReviewCount($book->id);
+
+        $this->assertEquals($book->id, $bookFound->id);
+        $this->assertCount(3, $bookFound->reviews);
+        $this->assertEquals(round((1 + 5 + 1) / 3, 2), round($bookFound->reviews_avg_rating, 2));
+        $this->assertEquals(3, $bookFound->reviews_count);
     }
 
     /**

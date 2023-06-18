@@ -2,6 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Contracts\CacheBookFilterInterface;
+use App\Contracts\CacheBookWithReviewsInterface;
+use App\Dto\BookFilterDto;
+use App\Enums\BookFilterEnum;
+use App\Http\Requests\BookFilterRequest;
 use App\Models\Book;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -11,16 +16,26 @@ class BookController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
+    public function index(BookFilterRequest $request, CacheBookFilterInterface $cacheBookFilter)
     {
-        $title = $request->input('title');
+        $filterDto = new BookFilterDto(...$request->validated());
 
         $books = Book::when(
-            $title,
+            $filterDto->title,
             fn(Builder $builder, $value) => $builder->title($value)
-        )->get();
+        );
 
-        return view('books.index', ['books' => $books]);
+        $books = match ($filterDto->filter) {
+            BookFilterEnum::popularLastMonth->name => $books->popularLastMonth(),
+            BookFilterEnum::popularLastSixMonths->name => $books->popularLast6Months(),
+            BookFilterEnum::hiRatedLastMonth->name => $books->hiRatedLastMonth(),
+            BookFilterEnum::hiRatedLastSixMonths->name => $books->hiRatedLast6Months(),
+            default => $books->latest()->withReviewsCount()->withReviewsAvgRating(),
+        };
+
+        $result = $cacheBookFilter->get($filterDto, $books);
+
+        return view('books.index', ['books' => $result]);
     }
 
     /**
@@ -28,7 +43,6 @@ class BookController extends Controller
      */
     public function create()
     {
-        //
     }
 
     /**
@@ -36,15 +50,14 @@ class BookController extends Controller
      */
     public function store(Request $request)
     {
-        //
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(string $id, CacheBookWithReviewsInterface $cacheBookWithReviews)
     {
-        //
+        return view('books.show', ['book' => $cacheBookWithReviews->get($id)]);
     }
 
     /**
@@ -52,7 +65,6 @@ class BookController extends Controller
      */
     public function edit(string $id)
     {
-        //
     }
 
     /**
@@ -60,7 +72,6 @@ class BookController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
     }
 
     /**
@@ -68,6 +79,5 @@ class BookController extends Controller
      */
     public function destroy(string $id)
     {
-        //
     }
 }

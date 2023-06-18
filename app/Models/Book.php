@@ -26,16 +26,84 @@ class Book extends Model
         return $builder->where('title', 'like', "%{$title}%");
     }
 
-    public function scopePopular(Builder $builder, ?DateTimeInterface $from = null, ?DateTimeInterface $to = null): Builder
+    public function scopeWithReviewsWithAvgRatingWithReviewCount(Builder $builder, string $bookId): Book
     {
-        return $builder->withCount(['reviews' => fn(Builder $q) => $this->dateFilter($q, $from, $to)])
+        return Book::with(['reviews' => fn($q) => $q->latest()])
+            ->withReviewsAvgRating()
+            ->withReviewsCount()->findOrFail($bookId);
+    }
+
+    public function scopeWithReviewsCount(
+        Builder            $builder,
+        ?DateTimeInterface $from = null,
+        ?DateTimeInterface $to = null
+    ): Builder
+    {
+        return $builder->withCount([
+            'reviews' => fn(Builder $q) => $this->dateFilter($q, $from, $to)
+        ]);
+    }
+
+    public function scopeWithReviewsAvgRating(
+        Builder            $builder,
+        ?DateTimeInterface $from = null,
+        ?DateTimeInterface $to = null
+    ): Builder
+    {
+        return $builder->withAvg(
+            [
+                'reviews' => fn(Builder $q) => $this->dateFilter($q, $from, $to)
+            ],
+            'rating'
+        );
+    }
+
+    public function scopePopular(
+        Builder            $builder,
+        ?DateTimeInterface $from = null,
+        ?DateTimeInterface $to = null
+    ): Builder
+    {
+        return $builder->withReviewsCount($from, $to)
             ->orderBy('reviews_count', 'desc');
     }
 
-    public function scopeHiRated(Builder $builder, ?DateTimeInterface $from = null, ?DateTimeInterface $to = null): Builder
+    public function scopeHiRated(
+        Builder            $builder,
+        ?DateTimeInterface $from = null,
+        ?DateTimeInterface $to = null
+    ): Builder
     {
-        return $builder->withAvg(['reviews' => fn(Builder $q) => $this->dateFilter($q, $from, $to)], 'rating')
+        return $builder->withReviewsAvgRating($from, $to)
             ->orderBy('reviews_avg_rating', 'desc');
+    }
+
+    public function scopePopularLastMonth(Builder $builder): Builder
+    {
+        return $builder->popular(now()->addMonths(-1), now())
+            ->hiRated(now()->addMonths(-1), now())
+            ->having('reviews_count', '>', 0);
+    }
+
+    public function scopePopularLast6Months(Builder $builder): Builder
+    {
+        return $builder->popular(now()->addMonths(-6), now())
+            ->hiRated(now()->addMonths(-6), now())
+            ->having('reviews_count', '>', 0);
+    }
+
+    public function scopeHiRatedLastMonth(Builder $builder): Builder
+    {
+        return $builder->hiRated(now()->addMonths(-1), now())
+            ->popular(now()->addMonths(-1), now())
+            ->having('reviews_count', '>', 0);
+    }
+
+    public function scopeHiRatedLast6Months(Builder $builder): Builder
+    {
+        return $builder->hiRated(now()->addMonths(-6), now())
+            ->popular(now()->addMonths(-6), now())
+            ->having('reviews_count', '>', 0);
     }
 
     private function dateFilter(Builder $builder, ?DateTimeInterface $from = null, ?DateTimeInterface $to = null)
