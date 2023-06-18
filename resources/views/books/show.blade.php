@@ -1,6 +1,9 @@
 <x-layout :pageTitle="'Book: '.$book['title']">
     <div class="mb-4">
-        <h1 class="sticky top-0 mb-2 text-2xl">{{ $book->title }}</h1>
+        <a
+            class="text-indigo-600 underline underline-offset-4 hover:underline-offset-2 hover:text-indigo-400"
+            href="{{ route('books.index') }}">Back to books list</a>
+        <h1 class="sticky top-0 mb-2 mt-4 text-2xl bg-gray-100 p-2 rounded-md shadow-md">{{ $book->title }}</h1>
 
         <div class="book-info">
             <div class="book-author mb-4 text-lg font-semibold">by {{ $book->author }}</div>
