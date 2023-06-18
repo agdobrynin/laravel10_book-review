@@ -14,14 +14,16 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        Book::factory(30)->create()->each(function (Book $book) {
-            $date = fn() => fake()->dateTimeBetween($book->created_at);
+        Book::factory(30)
+            ->create()
+            ->each(function (Book $book) {
+                $date = fn() => fake()->dateTimeBetween($book->created_at);
 
-            Review::factory(
-                rand(10, 20),
-                fn (array $attr) => ['created_at' => $date]
-            )
-                ->create(['book_id' => $book->id]);
-        });
+                Review::factory(
+                    rand(10, 20),
+                    fn(array $attr) => ['created_at' => $date, 'updated_at' => $date]
+                )
+                    ->create(['book_id' => $book->id]);
+            });
     }
 }
