@@ -1,8 +1,6 @@
 <x-layout :pageTitle="'Book: '.$book['title']">
     <div class="mb-4">
-        <a
-            class="text-indigo-600 underline underline-offset-4 hover:underline-offset-2 hover:text-indigo-400"
-            href="{{ route('books.index') }}">Back to books list</a>
+        <a class="link" href="{{ route('books.index') }}">Back to books list</a>
         <h1 class="sticky top-0 mb-2 mt-4 text-2xl bg-gray-100 p-2 rounded-md shadow-md">{{ $book->title }}</h1>
 
         <div class="book-info">
@@ -12,10 +10,14 @@
                     <x-star-rating :rating="$book['reviews_avg_rating']" class="text-2xl"/>
                 </div>
                 <span class="book-review-count text-sm text-gray-500">
-          {{ $book->reviews_count }} {{ Str::plural('review', 5) }}
-        </span>
+                    {{ $book->reviews_count }} {{ Str::plural('review', 5) }}
+                </span>
             </div>
         </div>
+    </div>
+
+    <div class="mb-4">
+        <a href="{{ route('books.reviews.create', $book) }}" class="btn link">Add a review!</a>
     </div>
 
     <div>
