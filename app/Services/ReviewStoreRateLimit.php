@@ -23,7 +23,9 @@ readonly class ReviewStoreRateLimit
         if ($this->rateLimiter->tooManyAttempts($rateKey, $maxAttempt)) {
             $seconds = $this->rateLimiter->availableIn($rateKey);
 
-            throw new \LogicException('Too many requests. You may try again in ' . $seconds . ' seconds.');
+            throw new \LogicException(
+                'One review for one book per ' . $decaySeconds . ' seconds. Try again in ' . $seconds . ' seconds.'
+            );
         }
 
         $this->rateLimiter->hit($rateKey, $decaySeconds);

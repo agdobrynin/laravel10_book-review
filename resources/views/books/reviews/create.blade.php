@@ -21,7 +21,7 @@
             <select name="rating" id="rating" @class(['input', 'input-error' => $errors->has('rating')])>
                 <option value="">Select a Rating</option>
                 @for($i = 1; $i <= 5; $i++)
-                    <option value="{{ $i }}"> {{ $i }}</option>
+                    <option value="{{ $i }}" @if($i == old('rating')) selected @endif> {{ $i }}</option>
                 @endfor
             </select>
             @error('rating')

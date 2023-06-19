@@ -10,6 +10,12 @@ use App\Services\ReviewStoreRateLimit;
 
 class ReviewController extends Controller
 {
+    public function __construct()
+    {
+        // Max request per minute for store method (with validation request)
+        $this->middleware(['throttle:6,1'])->only(['store']);
+    }
+
     /**
      * Show the form for creating a new resource.
      */
