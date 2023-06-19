@@ -38,11 +38,12 @@ class RouteServiceProvider extends ServiceProvider
         });
 
         RateLimiter::for('store-review', function (Request $request) {
-            $userIdentification = $request->user()?->id ?: $request->ip();
-            $bookId = $request->route('book');
-            $key = $userIdentification . ':' . $bookId;
+            if ($bookId = $request->route('book')) {
+                $userIdentification = $request->user()?->id ?: $request->ip();
+                $key = $userIdentification . ':' . $bookId;
 
-            return Limit::perHour(1)->by($key);
+                return Limit::perHour(1)->by($key);
+            }
         });
     }
 }
