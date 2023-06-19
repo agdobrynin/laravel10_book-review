@@ -6,15 +6,10 @@ use App\Dto\ReviewDto;
 use App\Http\Requests\ReviewRequest;
 use App\Models\Book;
 use App\Models\Review;
+use App\Services\ReviewStoreRateLimit;
 
 class ReviewController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('throttle:store-review')
-            ->only('store');
-    }
-
     /**
      * Show the form for creating a new resource.
      */
@@ -26,9 +21,15 @@ class ReviewController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(ReviewRequest $request, Book $book)
+    public function store(ReviewRequest $request, Book $book, ReviewStoreRateLimit $reviewStoreRateLimit)
     {
         $dto = new ReviewDto(...$request->validated());
+
+        try {
+            $reviewStoreRateLimit->checkLimit($book, 1);
+        } catch (\LogicException $exception) {
+            abort(429, $exception->getMessage());
+        }
 
         $review = new Review();
         $review->content = $dto->content;

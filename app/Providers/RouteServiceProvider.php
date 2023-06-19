@@ -36,14 +36,5 @@ class RouteServiceProvider extends ServiceProvider
             Route::middleware('web')
                 ->group(base_path('routes/web.php'));
         });
-
-        RateLimiter::for('store-review', function (Request $request) {
-            if ($bookId = $request->route('book')) {
-                $userIdentification = $request->user()?->id ?: $request->ip();
-                $key = $userIdentification . ':' . $bookId;
-
-                return Limit::perHour(1)->by($key);
-            }
-        });
     }
 }
