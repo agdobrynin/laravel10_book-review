@@ -9,6 +9,12 @@ use App\Models\Review;
 
 class ReviewController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('throttle:store-review')
+            ->only('store');
+    }
+
     /**
      * Show the form for creating a new resource.
      */
